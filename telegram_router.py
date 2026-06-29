@@ -3,12 +3,13 @@ telegram_router.py
 ==================
 Listens to Telegram messages and routes them directly to Neo's Brain.
 """
+import os
 import time
 import requests
 from neo.brain import NeoBrain
 
-# Your hardcoded token
-BOT_TOKEN = "8515055951:AAGUG1Zo_yMzJD9XRrbOjxPceJX-ddyd7pY"
+# Read token from environment
+BOT_TOKEN = os.environ.get("NEO_TELEGRAM_TOKEN", "")
 
 def send_message(chat_id, text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"

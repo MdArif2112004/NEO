@@ -25,7 +25,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # ── Auth ──
-NOTION_TOKEN = os.getenv("NOTION_TOKEN", "")
+NOTION_TOKEN = os.getenv("NOTION_API_KEY", "")
 
 HEADERS = {
     "Authorization": f"Bearer {NOTION_TOKEN}",

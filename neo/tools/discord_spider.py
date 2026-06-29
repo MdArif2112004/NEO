@@ -35,7 +35,7 @@ LOG_FILE = "bounty_leads.txt"
 FREELANCE_PIPELINE_ID_FILE = "freelance_pipeline_id.json"
 
 # Notion auth (reuse pattern from notion_api.py)
-NOTION_TOKEN = os.getenv("NOTION_TOKEN", "")
+NOTION_TOKEN = os.getenv("NOTION_API_KEY", "")
 NOTION_HEADERS = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
     "Content-Type": "application/json",

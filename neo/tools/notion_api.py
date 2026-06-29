@@ -10,7 +10,7 @@ import os
 import datetime
 
 # --- PASTE YOUR SECRET KEY HERE ---
-NOTION_TOKEN = os.getenv("NOTION_TOKEN", "") 
+NOTION_TOKEN = os.getenv("NOTION_API_KEY", "") 
 # ----------------------------------
 
 # Your specific Notion Page IDs
