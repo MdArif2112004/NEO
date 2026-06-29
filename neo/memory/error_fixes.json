@@ -1,0 +1,4 @@
+{
+  "FileNotFoundError: [Errno 2] No such file or directory": "When writing files from inside a script, always import os and use os.makedirs(os.path.dirname(filepath), exist_ok=True) right before calling open() to ensure the directory exists.",
+  "manual extraction of leads from messy_leads.txt": "use regular expressions to extract Company, Name, Role, and Email from text"
+}

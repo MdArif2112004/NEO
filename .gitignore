@@ -1,0 +1,70 @@
+# === Secrets / Credentials ===
+.env
+client_secrets.json
+notion_registry.json
+*_token.json
+*.key
+discord_bot_token.txt
+service_account.json
+
+# === Lead data / PII (CSV files that shouldn't be committed) ===
+*.csv
+
+# === Media / Binaries ===
+*.mp4
+*.mp3
+*.wav
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+
+# === Python cache / artifacts ===
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+
+# === System / Editor ===
+*.bak
+*.log
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# === Virtual environments ===
+venv/
+.venv/
+env/
+
+# === IDE ===
+.vscode/
+.idea/
+.claude/
+
+# === Notion internal IDs ===
+freelance_pipeline_id.json
+notion_registry.json
+
+# === Application data ===
+*.db
+*.sqlite
+
+# === Trash / temp ===
+.neo_trash/
+
+# === Large model files ===
+models/
+
+# === Downloaded content ===
+downloads/
+
+# === PDF archives ===
+archive/*.pdf
+archive/**/*.pdf

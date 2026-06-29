@@ -1,0 +1,2 @@
+13:51:36 - 🎤 Voice Module — Misfire Hardened Build
+13:51:36 - Ready. Say 'Neo' to begin. Wake words: ['neo', 'nio']

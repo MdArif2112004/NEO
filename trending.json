@@ -1,0 +1,92 @@
+[
+    {
+        "niche": "technews",
+        "title": "Voxel Space",
+        "body": "\nSource: https://s-macke.github.io/VoxelSpace/",
+        "score": 132
+    },
+    {
+        "niche": "technews",
+        "title": "Anthropic surpasses OpenAI to become most valuable AI startup",
+        "body": "\nSource: https://qazinform.com/news/anthropic-surpasses-openai-to-become-worlds-most-valuable-ai-startup",
+        "score": 366
+    },
+    {
+        "niche": "technews",
+        "title": "Openrsync: An implementation of rsync, by the OpenBSD team",
+        "body": "\nSource: https://github.com/kristapsdz/openrsync",
+        "score": 193
+    },
+    {
+        "niche": "technews",
+        "title": "Pandoc Templates",
+        "body": "\nSource: https://pandoc-templates.org/",
+        "score": 279
+    },
+    {
+        "niche": "technews",
+        "title": "Navier-Stokes fluid simulation explained with Godot game engine",
+        "body": "\nSource: https://myzopotamia.dev/navier-stokes-fluid-simulation-explained-with-godot",
+        "score": 98
+    },
+    {
+        "niche": "technews",
+        "title": "Werner Herzog in conversation with Paul Cronin (2014)",
+        "body": "\nSource: https://fsgworkinprogress.com/2014/09/26/insignificant-bullets-evil-poachers-and-l-a-culture/",
+        "score": 8
+    },
+    {
+        "niche": "technews",
+        "title": "It Takes Two Neurons to Ride a Bicycle",
+        "body": "\nSource: https://fermatslibrary.com/s/it-takes-two-neurons-to-ride-a-bicycle#email-newsletter",
+        "score": 35
+    },
+    {
+        "niche": "technews",
+        "title": "Zig: Build System Reworked",
+        "body": "\nSource: https://ziglang.org/devlog/2026/#2026-05-26",
+        "score": 261
+    },
+    {
+        "niche": "technews",
+        "title": "IXI's autofocusing lenses are almost ready to replace multifocal glasses",
+        "body": "\nSource: https://www.engadget.com/wearables/ixis-autofocusing-lenses-multifocal-glasses-ces-2026-212608427.html",
+        "score": 95
+    },
+    {
+        "niche": "technews",
+        "title": "Show HN: Helios \u2013 what plug-in solar could generate for any address in Britain",
+        "body": "Plug-in solar panels (no electrician needed) have just become legal in the UK and will go on sale soon. Helios estimates how much electricity a typical installation could generate at a given address and what that&#x27;s worth against your tariff.<p>It uses UK government LIDAR data to reflect the actual skyline, so it knows whether there&#x27;s a building or a hill blocking the sun.<p>Caveats:\n- Outside LIDAR coverage (most of Scotland and Wales) it falls back to a synthetic horizon (less accurate).\n- Trees and recent developments (post-2022 or so) may not be in the data, and some address placements could be off (geocoding via OSM).<p>Feedback on the shading model especially welcome.\nSource: https://helios.southlondonscientific.com/",
+        "score": 80
+    },
+    {
+        "niche": "technews",
+        "title": "What Happened to the Locusts?",
+        "body": "\nSource: https://explosion-scratch.github.io/locusts/",
+        "score": 132
+    },
+    {
+        "niche": "technews",
+        "title": "Downdetector and Speedtest sold to Accenture for $1.2B",
+        "body": "\nSource: https://www.theverge.com/tech/889234/downdetector-ookla-speedtest-sold-accenture",
+        "score": 32
+    },
+    {
+        "niche": "technews",
+        "title": "SQLite is all you need for durable workflows",
+        "body": "\nSource: https://obeli.sk/blog/sqlite-is-all-you-need-for-durable-workflows/",
+        "score": 633
+    },
+    {
+        "niche": "technews",
+        "title": "Testing the WWI concrete ships and WWII concrete barges",
+        "body": "\nSource: https://thecretefleet.com/blog/f/testing-the-wwi-concrete-ships-and-wwii-concrete-barges",
+        "score": 24
+    },
+    {
+        "niche": "technews",
+        "title": "Memory decline after menopause linked to loss of estrogen production in brain",
+        "body": "\nSource: https://news.northwestern.edu/stories/2026/05/memory-decline-after-menopause-linked-to-loss-of-estrogen-production-in-brain-tissue",
+        "score": 80
+    }
+]

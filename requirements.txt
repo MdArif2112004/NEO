@@ -1,0 +1,17 @@
+# Neo requirements
+# Install all: pip install -r requirements.txt
+
+# Core LLM
+google-generativeai>=0.8.0
+
+# Screen reading (for capture_chatgpt + read_screen)
+Pillow>=10.0.0
+pytesseract>=0.3.10
+pyautogui>=0.9.54
+
+# Testing
+pytest>=8.0.0
+
+# Utilities
+pathlib2>=2.3.7
+python-dotenv>=1.0.0

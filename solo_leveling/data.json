@@ -1,0 +1,21 @@
+{
+  "player": {
+    "level": 0,
+    "xp": 75,
+    "gold": 185,
+    "skill_points": 0,
+    "world_state": "Normal"
+  },
+  "skills": {
+    "manipulation": 1,
+    "tactical_genius": 4,
+    "charisma": 3,
+    "quick_thinking": 4,
+    "adaptability": 4,
+    "espionage": 2
+  },
+  "tracking": {
+    "last_login": "2026-05-21",
+    "streak": 1
+  }
+}

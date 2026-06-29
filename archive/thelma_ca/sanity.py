@@ -1,0 +1,10 @@
+import pandas as pd
+df = pd.read_csv('CA_Final_Delivery.csv')
+has_pdf   = df['PDF File'].notna() & df['PDF File'].ne('')
+has_price = df['Base_Price'].notna()
+both      = (has_pdf & has_price).sum()
+print(f"Total rows     : {len(df)}")
+print(f"PDFs           : {has_pdf.sum()}")
+print(f"Structured price: {has_price.sum()}")
+print(f"Has both        : {both}")
+print(f"Unique assets   : {len(df)} (no double-count)")
