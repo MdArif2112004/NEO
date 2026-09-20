@@ -2,8 +2,8 @@
 notification_server.py
 =======================
 Local OS notification routing for the alerting matrix.
-Lightweight HTTP server + win10toast for desktop alerts.
-Referenced by start_neo.bat — runs silently via pythonw.
+Lightweight HTTP server + notify-py (libnotify / DBus) for desktop alerts.
+Started by start_neo.sh — runs in the background under python3.
 """
 import json
 import os
@@ -16,12 +16,25 @@ HOST = "127.0.0.1"
 PORT = 51820
 
 try:
-    from win10toast import ToastNotifier
-    toaster = ToastNotifier()
+    from notifypy import Notify
+    toaster = Notify(default_notification_application_name="NEO")
     HAS_TOAST = True
 except ImportError:
     HAS_TOAST = False
-    print("[notification_server] win10toast not installed — alerts will log only.", flush=True)
+    print("[notification_server] notify-py not installed — alerts will log only.", flush=True)
+
+
+def show_toast(title: str, message: str, urgency: str = "normal"):
+    """Fire a desktop notification via notify-py (self-threading).
+
+    NOTE: notify-py has no duration parameter — the desktop environment owns the
+    toast timeout. The old win10toast `duration` arguments are kept in the public
+    signatures below for API compatibility and are intentionally ignored.
+    """
+    toaster.title = title
+    toaster.message = message
+    toaster.urgency = urgency
+    return toaster.send(block=False)
 
 
 class AlertHandler(BaseHTTPRequestHandler):
@@ -35,10 +48,10 @@ class AlertHandler(BaseHTTPRequestHandler):
             data = json.loads(body)
             title = data.get("title", "NEO Alert")
             message = data.get("message", "")
-            duration = data.get("duration", 5)
+            duration = data.get("duration", 5)  # accepted for API compat — notify-py ignores it
 
             if HAS_TOAST:
-                toaster.show_toast(title, message, duration=duration, threaded=True)
+                show_toast(title, message)
             else:
                 print(f"[notification_server] {title}: {message}", flush=True)
 
@@ -87,9 +100,9 @@ class NotificationServer:
             )
             urllib.request.urlopen(req, timeout=2)
             return True
-        except Exception as e:
+        except Exception:
             if HAS_TOAST:
-                toaster.show_toast(title, message, duration=duration, threaded=True)
+                show_toast(title, message, urgency="critical")
             return False
 
 

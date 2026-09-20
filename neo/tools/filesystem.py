@@ -4,8 +4,10 @@ neo/tools/filesystem.py
 Handles all local file reading, writing, web searching, and browser interaction.
 """
 import os
+import sys
 import glob
 import shutil
+import subprocess
 import webbrowser
 import urllib.request
 import pyperclip
@@ -92,9 +94,9 @@ def open_website(url: str) -> str:
     if url.endswith(".html") or url.startswith("file:"):
         # Strip out any hallucinated 'file://' formatting
         clean_path = url.replace("file:///", "").replace("file://", "").replace("file:/", "")
-        # Get the true, absolute path on the user's C: drive
+        # Resolve the real absolute path (OS-agnostic)
         full_path = os.path.abspath(clean_path)
-        # Convert it to a proper Windows URI (e.g., file:///C:/Users/...)
+        # Convert it to a proper file:// URI (e.g. file:///home/user/page.html)
         url = urllib.request.pathname2url(full_path)
         # Ensure it starts with the correct file prefix
         if not url.startswith("file:"):
@@ -133,10 +135,23 @@ def ask_gemini_web(massive_prompt: str) -> str:
     return "✅ User confirmed the answer is generated. You can now use read_screen() to capture the response."
 
 def open_local_file(path: str) -> str:
-    """Opens a file physically on the user's screen using their default application (like Notepad)."""
+    """Opens a file on the user's screen with their default application."""
+    if not os.path.exists(path):
+        return f"❌ Failed to open file: {path} does not exist."
     try:
-        # os.startfile is a Windows command that opens a file exactly as if you double-clicked it
-        os.startfile(path)
+        # Cross-platform replacement for Windows' os.startfile(): xdg-open on
+        # Linux, open on macOS, start on Windows. Detached so Neo isn't blocked.
+        if sys.platform.startswith("win"):
+            os.startfile(path)  # type: ignore[attr-defined]
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", path], start_new_session=True)
+        else:
+            subprocess.Popen(
+                ["xdg-open", path],
+                start_new_session=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         return f"✅ Popped open '{path}' on the screen."
     except Exception as e:
         return f"❌ Failed to open file: {e}"

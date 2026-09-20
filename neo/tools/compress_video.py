@@ -1,10 +1,10 @@
-import moviepy.editor as mp
 import os
+from moviepy import VideoFileClip   # moviepy 2.x API (moviepy.editor was removed)
 
 def compress_video(input_file, output_file):
     try:
-        video = mp.VideoFileClip(input_file)
-        video.write_videofile(output_file, codec="libx264", audio_codec="aac", verbose=False)
+        video = VideoFileClip(input_file)
+        video.write_videofile(output_file, codec="libx264", audio_codec="aac", logger=None)
         video.close()
         return '✅ Success: Video compressed and saved to ' + output_file
     except Exception as e:

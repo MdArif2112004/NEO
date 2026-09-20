@@ -15,12 +15,20 @@ from datetime import datetime
 # ── Notification routing ──
 NOTIFICATION_SERVER_URL = "http://127.0.0.1:51820/"
 try:
-    from win10toast import ToastNotifier
-    FALLBACK_TOASTER = ToastNotifier()
+    from notifypy import Notify
+    FALLBACK_TOASTER = Notify(default_notification_application_name="NEO")
     HAS_FALLBACK = True
 except ImportError:
     FALLBACK_TOASTER = None
     HAS_FALLBACK = False
+
+
+def _fire_fallback_toast(title: str, message: str):
+    """Direct desktop toast via notify-py (non-blocking, self-threaded)."""
+    FALLBACK_TOASTER.title = title
+    FALLBACK_TOASTER.message = message
+    FALLBACK_TOASTER.urgency = "critical"
+    return FALLBACK_TOASTER.send(block=False)
 
 # ── The Hunt Matrix ──
 TARGET_KEYWORDS = ["python", "scraping", "automation", "bot", "data pipeline", "AI agent"]
@@ -49,7 +57,11 @@ client = discord.Client(intents=intents)
 
 
 def send_notification(title: str, message: str, duration: int = 6):
-    """Route alert through notification_server.py; fallback to direct win10toast."""
+    """Route the alert through notification_server.py; fall back to a direct notify-py toast.
+
+    `duration` is kept for API compatibility — notify-py delegates expiry to the
+    desktop environment and has no timeout knob.
+    """
     try:
         import urllib.request
         payload = json.dumps({
@@ -67,7 +79,7 @@ def send_notification(title: str, message: str, duration: int = 6):
     except Exception:
         if HAS_FALLBACK and FALLBACK_TOASTER is not None:
             try:
-                FALLBACK_TOASTER.show_toast(title, message, duration=duration, threaded=True)
+                _fire_fallback_toast(title, message)
                 return True
             except Exception:
                 pass
@@ -201,7 +213,7 @@ async def on_message(message):
 
 
 def execute_spider():
-    """Entry point — called from start_neo.bat or standalone."""
+    """Entry point — called from start_neo.sh or standalone."""
     token = os.environ.get("DISCORD_BOT_TOKEN")
     if not token:
         print("❌ [SYSTEM FAULT] DISCORD_BOT_TOKEN not found in environment variables.")

@@ -12,6 +12,13 @@ pyautogui>=0.9.54
 # Testing
 pytest>=8.0.0
 
+# Notifications (cross-platform desktop toasts — Linux libnotify/DBus, Windows, macOS)
+notify-py>=0.3.43
+
+# Media pipeline (video render + Microsoft Edge neural TTS)
+moviepy>=2.0.0
+edge-tts>=6.1.0
+
 # Utilities
 pathlib2>=2.3.7
 python-dotenv>=1.0.0

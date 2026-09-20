@@ -9,7 +9,7 @@ import os
 import glob
 import asyncio
 import edge_tts
-from moviepy.editor import AudioFileClip, ImageClip, concatenate_videoclips
+from moviepy import AudioFileClip, ImageClip, concatenate_videoclips
 
 # Configuration Matrix
 SCRIPT_FILE = "script.txt"
@@ -66,15 +66,15 @@ def assemble_matrix():
     clips = []
     for img_path in image_paths:
         clip = (ImageClip(img_path)
-                .set_duration(time_per_image)
-                .resize(newsize=RESOLUTION) # Forces uniformity, preventing composition crashes
-                .set_position("center"))
+                .with_duration(time_per_image)
+                .resized(new_size=RESOLUTION) # Forces uniformity, preventing composition crashes
+                .with_position("center"))
         clips.append(clip)
         
     # Compose the final matrix
     # method="compose" is mathematically slower but drastically reduces memory overflow
     final_video = concatenate_videoclips(clips, method="compose")
-    final_video = final_video.set_audio(audio_clip)
+    final_video = final_video.with_audio(audio_clip)
     
     print("⚙️ [ENCODING] Initiating ffmpeg write sequence...")
     # Capped at 2 threads and 24fps to respect the 8GB local memory limit

@@ -8,7 +8,7 @@ Optimized for 8GB RAM local machines.
 """
 import os
 import random
-from moviepy.editor import VideoFileClip, AudioFileClip, TextClip, CompositeVideoClip
+from moviepy import VideoFileClip, AudioFileClip   # moviepy 2.x API (TextClip/CompositeVideoClip were unused)
 
 def render_shorts(audio_dir="audio", bg_video="gameplay.mp4", output_dir="renders") -> str:
     """Assembles audio and background video into a 9:16 short."""
@@ -56,7 +56,7 @@ def render_shorts(audio_dir="audio", bg_video="gameplay.mp4", output_dir="render
             start_time = random.uniform(0, max_start)
             
             # Cut the background video to match the audio length perfectly
-            bg_clip = base_bg.subclip(start_time, start_time + audio_duration)
+            bg_clip = base_bg.subclipped(start_time, start_time + audio_duration)
             
             # Crop to 9:16 Vertical format (1080x1920 ratio)
             # We crop the center of the video
@@ -65,7 +65,7 @@ def render_shorts(audio_dir="audio", bg_video="gameplay.mp4", output_dir="render
             target_width = int(h * target_ratio)
             x_center = w / 2
             
-            bg_clip = bg_clip.crop(
+            bg_clip = bg_clip.cropped(
                 x1=x_center - target_width/2, 
                 y1=0, 
                 x2=x_center + target_width/2, 
@@ -73,10 +73,10 @@ def render_shorts(audio_dir="audio", bg_video="gameplay.mp4", output_dir="render
             )
             
             # Resize standard to 720x1280 to save render time and RAM
-            bg_clip = bg_clip.resize(height=1280, width=720)
+            bg_clip = bg_clip.resized(height=1280, width=720)
             
             # Attach the generated AI voice to the video
-            final_video = bg_clip.set_audio(audio_clip)
+            final_video = bg_clip.with_audio(audio_clip)
             
             # Render the final file. 
             # We use fast presets and low threads to prevent CPU thermal throttling.
@@ -108,6 +108,6 @@ def render_shorts(audio_dir="audio", bg_video="gameplay.mp4", output_dir="render
 if __name__ == "__main__":
     import sys
     import io
-    # Force Windows terminal to accept UTF-8 Emojis
+    # Force UTF-8 stdout so the emoji render on any terminal
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     print(render_shorts())

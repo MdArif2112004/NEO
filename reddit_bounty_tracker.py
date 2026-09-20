@@ -1,9 +1,15 @@
 """
-reddit_bounty_tracker.py — NEO Dual-Stream Reddit Bounty Hunter (RSS edition)
+reddit_bounty_tracker.py — NEO Triple-Stream Reddit Bounty Hunter (RSS edition)
+Streams: JOB_BOARD (tech-matched freelance/gigs) · BASELINE_INCOME (any-skill,
+2-10 day quick cash — nothing-to-do-with-the-tech gigs, for baseline income) ·
+FOUNDER_SUB (Track A+ founding-ops, direct-founder posts).
+Synced to: Job Search Gem (₹18k/40hr floor secured elsewhere, Track A+ priority,
+r/startups + r/cofounder channels) and Freelance Strategist Gem (capability gate,
+pricing matrix, RLHF/compliance guardrails) — both current as of this update.
 Auth: NONE — Reddit RSS feeds, no credentials needed.
 RAM: ~10-15MB
-Dependencies: requests, feedparser, win10toast
-Install: pip install requests feedparser win10toast
+Dependencies: requests, feedparser, notify-py
+Install: pip install requests feedparser notify-py
 Run: python reddit_bounty_tracker.py
 """
 
@@ -19,7 +25,7 @@ from pathlib import Path
 
 import requests
 import feedparser
-from win10toast import ToastNotifier
+from notifypy import Notify
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -30,7 +36,7 @@ JOB_SUBS = {
     "UpworkOfficial", "LookingforJob",
     "creatorservices",
 }
-FOUNDER_SUBS  = set()   # {"entrepreneur", "smallbusiness", "saas", "startups"} — muted: low signal, high rate-limit cost
+FOUNDER_SUBS  = {"startups", "cofounder"}   # ACTIVE — Track A+ founding-ops priority (Job Search Gem channel strategy)
 ALL_SUBS      = list(JOB_SUBS | FOUNDER_SUBS)
 JOB_TITLE_TAGS = ["[hiring]", "[task]"]   # legacy — kept for reference, replaced by TITLE_INCLUDE below
 # Title must contain at least one of these (mirrors Reddit Exact Search: title:hiring OR title:"looking for")
@@ -39,16 +45,32 @@ TITLE_INCLUDE = ["hiring", "looking for"]
 TITLE_EXCLUDE = ["for hire", "hire me"]
 
 JOB_KEYWORDS = [
-    "scrape", "data entry", "lead list", "automation", "python",
-    "web scraping", "data pipeline", "bot", "crawler", "lead generation",
-    "data extraction", "data cleaning", "csv", "spreadsheet",
-    "youtube automation", "faceless", "shorts editor", "bulk video",
+    "scrape", "data entry", "lead list", "web scraping", 
+    "data pipeline", "lead generation", "data extraction", 
+    "data cleaning", "csv", "spreadsheet", 
+    "youtube automation", "faceless", "bulk video", "script writing",
+    "chief of staff", "founder's associate", "operations manager", 
+    "data operations", "startup ops", "notion", "workspace architecture",
+    "b2b leads", "email finding", "email extraction", "lead enrichment",
 ]
 
 FOUNDER_KEYWORDS = [
-    "hire a va", "virtual assistant", "how to find leads",
-    "automate crm", "data extraction", "lead generation",
-    "need a developer", "looking for freelancer", "find leads",
+    "how to find leads", "automate crm", "data extraction", 
+    "lead generation", "looking for freelancer", "find leads",
+    "systems builder", "operations architecture",
+    "first ops hire", "founding ops", "operations hire", "ops hire",
+    "early-stage", "pre-seed", "seed-stage", "founding team",
+]
+
+# Track: Baseline Income — short-duration (2-10 day), SKILL-AGNOSTIC paid gigs.
+# Priority: real cash now over tech-fit. Nothing to do with Arif's actual stack is fine —
+# still passes the hard blacklists (geo/comp/onsite/compliance), just skips the tech-
+# keyword requirement AND the soft VA-without-tech filter (see match_baseline below).
+BASELINE_KEYWORDS = [
+    "quick job", "quick task", "small task", "one-off", "one off", "one time job",
+    "urgent", "asap", "need done today", "need this week", "short term",
+    "few hours", "couple of hours", "few days", "this weekend", "temp job",
+    "temporary", "1 day", "2 day", "3 day", "day turnaround", "fast turnaround",
 ]
 
 # ── Blacklists (Triage Hotfix) ─────────────────────────────────────────────
@@ -73,10 +95,29 @@ BLACKLIST_COMP = [
 BLACKLIST_ROLE = [
     "calendar management", "administrative support",
     "email coordination", "email management",
-    "female streamer",
-    "cam model",
-    "slim",
-    "appearance criteria",
+    "female streamer", "cam model", "slim", "appearance criteria",
+    
+    # ── HOTFIX: Tech & Engineering Traps ──
+    "react", "frontend", "full-stack", "full stack", "django", 
+    "java", "spring boot", "app developer", "chatbot", 
+    "software developer", "software engineer",
+    
+    # ── HOTFIX: Manual Editor Traps ──
+    "after effects", "davinci resolve", "premiere pro", 
+    "vfx", "cinematic", "gameplay",
+
+    # ── HOTFIX: RLHF/Data-Annotation Compliance Trap ──
+    # Freelance Gem §5: routing these through an LLM violates anti-cheat protocols —
+    # permanent bans + pay clawbacks. Hard block, not a judgment call.
+    "rlhf", "reinforcement learning from human feedback", "data annotation",
+    "data labeling", "data labelling", "outlier.ai", "alignerr",
+    "ai training data", "model training feedback",
+
+    # ── HOTFIX: Personal/Creator Data Traps ──
+    # Freelance Gem §2: CANNOT-DELIVER — personal scraping triggers DPDP/GDPR liability.
+    "influencer emails", "creator emails", "social media handles",
+    "scrape instagram", "scrape tiktok", "personal profiles",
+    "product photography", "product imagery", "luxury product shoot",
 ]
 
 # Soft role drop — VA/PA posts that DON'T also mention technical keywords
@@ -92,7 +133,7 @@ BLACKLIST_ONSITE = [
 # ── Infra ─────────────────────────────────────────────────────────────────────
 
 BOUNTY_LOG     = Path("bounty_log.csv")
-POLL_INTERVAL  = 300     # seconds between full cycles — was 180; cuts cumulative request volume ~40%
+POLL_INTERVAL  = 420     # 7 minutes between cycles (optimizes for 403 survival)
 FETCH_DELAY    = 5       # seconds between per-sub fetches (polite; reduces 403 blocks)
 TOAST_DURATION = 8
 TOAST_COOLDOWN = 5       # increased to avoid WNDPROC collision
@@ -150,7 +191,7 @@ def fetch_sub(subreddit: str):
     global _working_base
     order = [_working_base] + [b for b in RSS_BASES if b != _working_base]
     for base in order:
-        url = f"{base}/r/{subreddit}/new.rss?limit=25"
+        url = f"{base}/r/{subreddit}/new.rss?limit=50"
         headers = random.choice(HEADERS_POOL)
         try:
             r = SESSION.get(url, headers=headers, timeout=15)
@@ -180,7 +221,10 @@ def fetch_sub(subreddit: str):
 def _lower(text) -> str:
     return (text or "").lower()
 
-def is_blacklisted(post: dict) -> bool:
+def is_blacklisted(post: dict, check_soft_va: bool = True) -> bool:
+    """check_soft_va=False skips the VA/PA-without-tech drop — used by the
+    Baseline Income stream, which WANTS skill-agnostic quick gigs. All other
+    checks (geo/comp/role/onsite/compliance) still apply regardless."""
     full = _lower(post.get("title", "")) + " " + _lower(post.get("body", ""))
 
     for kw in BLACKLIST_GEO:
@@ -210,13 +254,14 @@ def is_blacklisted(post: dict) -> bool:
         log.debug(f"HYBRID DROP [{post.get('sub')}]: {post.get('title', '')[:60]}")
         return True
 
-    # Soft: VA/PA posts without any technical keyword = drop
-    has_soft = any(kw in full for kw in SOFT_BLACKLIST_ROLE)
-    if has_soft:
-        has_tech = any(kw in full for kw in JOB_KEYWORDS)
-        if not has_tech:
-            log.debug(f"VA DROP [{post.get('sub')}]: {post.get('title', '')[:60]}")
-            return True
+    # Soft: VA/PA posts without any technical keyword = drop (skippable — see docstring)
+    if check_soft_va:
+        has_soft = any(kw in full for kw in SOFT_BLACKLIST_ROLE)
+        if has_soft:
+            has_tech = any(kw in full for kw in JOB_KEYWORDS)
+            if not has_tech:
+                log.debug(f"VA DROP [{post.get('sub')}]: {post.get('title', '')[:60]}")
+                return True
 
     return False
 
@@ -239,6 +284,25 @@ def match_job(post: dict) -> str | None:
             return kw
     return None
 
+def match_baseline(post: dict) -> str | None:
+    """Track: Baseline Income. Same subs as the job stream, but skill-agnostic —
+    matches purely on a short-duration/urgency signal, not a tech keyword. This
+    is the 'nothing to do with my tech, just need cash, 2-10 days' lane."""
+    if post["sub"].lower() not in {s.lower() for s in JOB_SUBS}:
+        return None
+    title = _lower(post["title"])
+    if not any(inc in title for inc in TITLE_INCLUDE):
+        return None
+    if any(exc in title for exc in TITLE_EXCLUDE):
+        return None
+    if is_blacklisted(post, check_soft_va=False):
+        return None
+    full = title + " " + _lower(post["body"])
+    for kw in BASELINE_KEYWORDS:
+        if kw in full:
+            return kw
+    return None
+
 def match_founder(post: dict) -> str | None:
     if post["sub"].lower() not in {s.lower() for s in FOUNDER_SUBS}:
         return None
@@ -252,7 +316,7 @@ def match_founder(post: dict) -> str | None:
 
 # ── Output ────────────────────────────────────────────────────────────────────
 
-toaster     = ToastNotifier()
+toaster     = Notify(default_notification_application_name="NEO")
 _toast_lock = threading.Lock()
 
 def fire_alert(post: dict, stream_label: str, keyword: str):
@@ -267,14 +331,14 @@ def fire_alert(post: dict, stream_label: str, keyword: str):
     def _toast():
         with _toast_lock:
             try:
-                toaster.show_toast(
-                    f"NEO BOUNTY: {sub_name}",
-                    title_str,
-                    duration=TOAST_DURATION,
-                    threaded=False,
-                )
+                toaster.title   = f"NEO BOUNTY: {sub_name}"
+                toaster.message = title_str
+                toaster.urgency = "critical"
+                # notify-py is non-blocking by default (it self-threads). The old
+                # TOAST_DURATION is no longer honoured — the desktop owns expiry.
+                toaster.send(block=False)
             except Exception:
-                pass   # suppress WNDPROC/WPARAM errors from rapid double-toasts
+                pass   # never let a toast failure kill the hunt loop
             time.sleep(TOAST_COOLDOWN)
 
     threading.Thread(target=_toast, daemon=True).start()
@@ -290,6 +354,7 @@ def fire_alert(post: dict, stream_label: str, keyword: str):
 
 def run_loop():
     log.info(f"Watching {len(ALL_SUBS)} subs via RSS | poll={POLL_INTERVAL}s | delay={FETCH_DELAY}s/sub")
+    log.info(f"Streams: JOB_BOARD (tech-match) + BASELINE_INCOME (any-skill, 2-10day) + FOUNDER_SUB (Track A+, {len(FOUNDER_SUBS)} subs: {', '.join(sorted(FOUNDER_SUBS))})")
     log.info(f"Blacklists active: geo={len(BLACKLIST_GEO)} | comp={len(BLACKLIST_COMP)} | role={len(BLACKLIST_ROLE)+len(SOFT_BLACKLIST_ROLE)}")
     log.info("Stream LIVE. Ctrl+C to stop.\n")
 
@@ -330,6 +395,12 @@ def run_loop():
                 kw = match_job(post)
                 if kw:
                     fire_alert(post, "JOB_BOARD", kw)
+                    hits += 1
+                    continue
+
+                kw = match_baseline(post)
+                if kw:
+                    fire_alert(post, "BASELINE_INCOME", kw)
                     hits += 1
                     continue
 

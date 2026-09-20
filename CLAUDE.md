@@ -12,7 +12,7 @@ Local Python AI terminal. ReAct loop (Think → Act → Observe). 8GB RAM / Wind
 
 **Entry points:**
 - `run_neo.py` — direct terminal (A.V.E.N.G.E.R.S. Interface)
-- `start_neo.bat` — silent background boot via `pythonw`
+- `start_neo.sh` — background boot (Linux) for the alerting matrix
 
 ---
 
@@ -31,7 +31,7 @@ Local Python AI terminal. ReAct loop (Think → Act → Observe). 8GB RAM / Wind
 | File | Description |
 |------|-------------|
 | `run_neo.py` | Command-line entry — A.V.E.N.G.E.R.S. Terminal Interface for direct interactions. |
-| `start_neo.bat` | **Master Boot Sequence** — Silent background ignition via `pythonw`. Launches `notch.py`, `voice.py`, `telegram_router.py`, `notification_server.py` with `timeout /t 5` startup delay. Add `reddit_bounty_tracker.py` to this boot sequence. |
+| `start_neo.sh` | **Master Boot Sequence (Linux)** — Background ignition: 5s stability delay, then `nohup python3` launches `reddit_bounty_tracker.py`, `telegram_router.py`, `voice.py`, `notification_server.py` (logs to `logs/`). Runs from the repo root and self-chmods. Replaces the old `start_neo.bat`. |
 | `requirements.txt` | Python dependencies |
 | `README.md` | Project overview |
 | `NEO_MASTER_CODEX.md` | Full architecture codex (for Gemini Architect Gem — not Claude). |
@@ -43,17 +43,14 @@ Local Python AI terminal. ReAct loop (Think → Act → Observe). 8GB RAM / Wind
 
 | File | Description |
 |------|-------------|
-| `notch.py` | **AVENGERS HUD — Windows AppBar.** C-level `shell32.dll` via `ctypes`. Locks top 28px of screen. Status dot tracks voice state via `state.txt` (Gray=Idle, Green=Listening, Blue=Processing). Left segment shows a live clock + today's bounty count read from `bounty_log.csv` (replaced the stale "COMPLETED" text). Center suggestion is clickable — `execute_suggestion` runs the action (opens job-board links). Houses [VISION STRIKE] and [CLIP INGEST] anchor buttons. |
-| `notch.py.bak` | Backup of notch.py |
-| `notch_state.json` | Persisted state JSON |
 | `observer.py` | Background observer / watcher |
 | `telegram_router.py` | Encrypted Telegram alerting + remote commands |
 | `voice.py` | **Voice Interface (Vosk offline STT + command grammar + system TTS).** Grammar-locked: only the fixed phrases in `ACTIONS` are recognized, so commands can't be misheard ("open youtube" can't become "open you to"). Loads model from `models/vosk-en/`. Free-vocab window only inside `ask neo` / `search youtube`. Updates `state.txt`. Speaks via `neo_voice.speak`. Clap-to-wake dropped. Deps: vosk, sounddevice, pyttsx3. |
 | `voice_test.py` | Voice test script |
 | `mic_test.py` | Microphone test script |
 | `dashboard.py` | Streamlit local web UI for monitoring |
-| `notification_server.py` | **Local Notification Server** — Lightweight HTTP server on `127.0.0.1:51820` + `win10toast` for desktop alerts. Runs silently via `pythonw`. Referenced by `start_neo.bat`. |
-| `state.txt` | State tracker consumed by `notch.py` (Gray=Idle, Green=Listening, Blue=Processing) |
+| `notification_server.py` | **Local Notification Server** — Lightweight HTTP server on `127.0.0.1:51820` + `notify-py` (libnotify/DBus) for desktop alerts. Started by `start_neo.sh`. Accepts `{title, message, duration}` — `duration` is ignored, the desktop owns toast expiry. |
+| `state.txt` | State tracker written by `voice.py` / `neo_ears.py` and surfaced by `dashboard.py` (Gray=Idle, Green=Listening, Blue=Processing) |
 | `command_center.html` | HTML command center UI |
 
 ### Audio / Video Assets (Root)
@@ -84,7 +81,7 @@ Local Python AI terminal. ReAct loop (Think → Act → Observe). 8GB RAM / Wind
 
 | File | Description |
 |------|-------------|
-| `reddit_bounty_tracker.py` | **Reddit Bounty Tracker** — RSS-based live monitor for 14 freelance subreddits. Zero credentials. Persistent `requests.Session` primed with reddit.com cookies + rotating `HEADERS_POOL` (Chrome/Firefox) + random 8–14s per-sub delay — fixes blanket 403s on residential IP. Fires `win10toast`, auto-opens URL, logs to `bounty_log.csv`. Blacklist gates: geo / comp / onsite / role-type (incl. adult-content terms: "female streamer", "cam model", "slim", "appearance"). Stale-post guard (SCRIPT_START). Rate-limit backoff (15-min cooldown). Deps: `requests feedparser win10toast`. Boot: `pythonw reddit_bounty_tracker.py`. |
+| `reddit_bounty_tracker.py` | **Reddit Bounty Tracker** — RSS-based live monitor for 14 freelance subreddits. Zero credentials. Persistent `requests.Session` primed with reddit.com cookies + rotating `HEADERS_POOL` (Chrome/Firefox) + random 8–14s per-sub delay — fixes blanket 403s on residential IP. Fires a `notify-py` desktop toast, auto-opens URL, logs to `bounty_log.csv`. Blacklist gates: geo / comp / onsite / role-type (incl. adult-content terms: "female streamer", "cam model", "slim", "appearance"). Stale-post guard (SCRIPT_START). Rate-limit backoff (15-min cooldown). Deps: `requests feedparser notify-py`. Boot: `nohup python3 reddit_bounty_tracker.py` via `start_neo.sh`. |
 
 ### Content / Output Files (Root)
 
@@ -97,7 +94,7 @@ Local Python AI terminal. ReAct loop (Think → Act → Observe). 8GB RAM / Wind
 | `voice_log.txt` | Voice interaction log |
 | `apex_brief.txt` | Apex competitive brief |
 | `youtube_tools.txt` | YouTube tool notes |
-| `wardialing_report.txt` | Wardialing scan report |
+| `wardialing_report.txt` | Wardialing scan report — excluded from public repo |
 
 ### Downloads
 
@@ -115,7 +112,7 @@ Local Python AI terminal. ReAct loop (Think → Act → Observe). 8GB RAM / Wind
 | `neo/__init__.py` | Package initializer |
 | `neo/brain.py` | **⚠️ IMMUTABLE — NEVER MODIFY THE LOOP.** NeoBrain ReAct engine. Think → Act → Observe. Orchestrates all 38 tools. 380 lines. Has `CORE_FILES` protection + `_permitted()` QA gate blocking unsafe subprocess execution. |
 | `neo/config.py` | **Failover Matrix (Part 1)** — Hardware-optimized API router config |
-| `neo/discord_bot.py` | **Shadow Exchange C&C** — Two-way remote Command & Control. Listens passively via Bot Token for keyword bounties, serves alerts via `win10toast`. |
+| `neo/discord_bot.py` | **Shadow Exchange C&C** — Two-way remote Command & Control. Listens passively via Bot Token for keyword bounties, serves alerts via `notify-py`. |
 
 ### `neo/llm/` — LLM Failover Router
 
@@ -145,7 +142,7 @@ Local Python AI terminal. ReAct loop (Think → Act → Observe). 8GB RAM / Wind
 | **Enrichment** | `b2b_enrich.py` (SerpApi website + email resolver), `web_researcher.py` |
 | **Media / Content** | `media_forge.py`, `video_forge.py` (short-form video render), `script_matrix.py`, `content_writer.py`, `tts_engine.py`, `compress_video.py`, `youtube_publisher.py`, `arbitrage.py`, `image_prompt_batcher.py` |
 | **AI / Memory** | `deep_memory.py` (local RAG, Ollama + numpy cosine, zero cloud), `error_memory.py`, `meta_coder.py` (auto-generates new tools), `screen.py` (OCR/Vision), `vision_strike.py`, `system_audio.py`, `neo_voice.py` |
-| **System / QA** | `testing.py`, `benchmark_node.py`, `permission.py`, `cold_reboot.py` (kills pythonw, flushes RAM, restarts Neo), `validate_edits.py` (syntax check, missing init, stale .bak detection) |
+| **System / QA** | `testing.py`, `benchmark_node.py`, `permission.py`, `cold_reboot.py` (kills the background processes, flushes the module cache, restarts via `python3 run_neo.py`), `validate_edits.py` (syntax check, missing init, stale .bak detection) |
 
 ### Full Tool Index
 
@@ -160,7 +157,7 @@ Local Python AI terminal. ReAct loop (Think → Act → Observe). 8GB RAM / Wind
 | `neo/tools/bulk_downloader.py` | **Bulk Downloader** — Mass file download utility |
 | `neo/tools/check_notion.py` | **Notion Check** — Verify Notion database connection |
 | `neo/tools/clip_ingest.py` | **Clip Ingestion** — Media clip ingestion pipeline |
-| `neo/tools/cold_reboot.py` | **Cold Reboot Engine** — Module Cache Phantom fix. Kills all `pythonw` processes, flushes RAM, restarts via `start_neo.bat`. Run after editing any background script. |
+| `neo/tools/cold_reboot.py` | **Cold Reboot Engine** — Module Cache Phantom fix (Linux). Kills the Neo background processes by name (`pgrep` + `SIGKILL`, never a blanket python kill), flushes the module cache, relaunches `python3 run_neo.py` detached. Run after editing any background script. |
 | `neo/tools/compress_video.py` | **Video Compressor** — File size reduction |
 | `neo/tools/content_validator.py` | **Zero-Noise Validation Gate** — Pre-save content validator. `validate_pricing_doc(raw_bytes, entity)`: checks magic bytes (`%PDF`), size bounds (3KB–15MB), pricing signal count (≥3), entity relevance (venue name token). `validate_pricing_text(text, entity)`: same logic for scraped HTML. `rank_candidates(links)`: scores links by anchor/URL keyword strength, returns best-first. Prevents blind ingestion. RAM: low (`pypdf` only — never `pdfplumber`). Dep: `pip install pypdf`. |
 | `neo/tools/content_writer.py` | **Content Writer** — AI-driven content generation |
@@ -369,9 +366,9 @@ The following files are locked and must **never** enter agent context:
 
 ## Environment Variables Required
 
-Names only — values stay in `.env` exclusively.
+Names only — values stay in Windows env exclusively (not `.env` file).
 
-`GROQ_API_KEY` · `GEMINI_API_KEY` · `NOTION_API_KEY` · `NOTION_DATABASE_ID` · `DISCORD_BOT_TOKEN` · `DISCORD_WH_SYSTEM` · `DISCORD_WH_FACTORY` · `DISCORD_WH_OPERATOR` · `DISCORD_WH_CONVERTER`
+`GROQ_API_KEY` · `GEMINI_API_KEY` · `NOTION_API_KEY` · `NEO_TELEGRAM_TOKEN` · `DISCORD_BOT_TOKEN` · `DISCORD_WH_SYSTEM` · `DISCORD_WH_FACTORY` · `DISCORD_WH_OPERATOR` · `DISCORD_WH_CONVERTER`
 
 ---
 
@@ -394,9 +391,9 @@ Names only — values stay in `.env` exclusively.
 | `TARGET_KEYWORDS` | `["python", "scraping", "automation", "bot", "data pipeline", "AI agent"]` |
 | `TARGET_SERVER_FRAGMENTS` | `["freelance", "programmer"]` — substring match, case-insensitive |
 | `TARGET_CHANNEL_FRAGMENTS` | `["hire", "gig", "freelance", "job", "work"]` — substring match, case-insensitive |
-| **Notification routing** | POST to `http://127.0.0.1:51820/` → fallback to direct `win10toast` |
+| **Notification routing** | POST to `http://127.0.0.1:51820/` → fallback to a direct `notify-py` toast |
 | **Logging** | Writes to `bounty_leads.txt`: timestamp, server, channel, user, content preview, jump link |
-| **Boot integration** | Launched via `pythonw -c` in `start_neo.bat` — runs silently via `execute_spider()` |
+| **Boot integration** | Run via `execute_spider()`; `start_neo.sh` boots the 4 core background scripts |
 | **Env dependency** | Requires `DISCORD_BOT_TOKEN` |
 
 ---
@@ -421,14 +418,14 @@ Names only — values stay in `.env` exclusively.
 | **Poll interval** | 300s (5 min) |
 | **Fetch delay** | random 8–14s per sub (raised from 5s to beat residential-IP 403s) |
 | **Log** | `bounty_log.csv` |
-| **Boot** | `start "" pythonw reddit_bounty_tracker.py` in `start_neo.bat` |
+| **Boot** | `nohup python3 reddit_bounty_tracker.py >> logs/reddit_bounty_tracker.log 2>&1 &` in `start_neo.sh` |
 
 ---
 
 ## Media Pipeline Architecture
 
 - `neo_core/media/` — Root media folder. Subfolders: `character_ref/`, `scripts/`, `assets/channel_1/`, `assets/channel_2/`
-- `neo/tools/video_forge.py` *(PLANNED)*: Script-to-video pipeline. Inputs: script `.txt` + image prompt list. Outputs: TTS audio (edge-tts) + assembled video (MoviePy) to target `assets/` folder.
+- `neo/tools/video_forge.py` *(partially built — forge.py at root, tested)*: Script-to-video pipeline. Inputs: script `.txt` + image prompt list. Outputs: TTS audio (edge-tts) + assembled video (MoviePy) to target `assets/` folder.
 - `neo/tools/image_prompt_batcher.py` ✅ **BUILT**: Takes a script, generates numbered image prompt list, saves to `assets/[video_id]/prompts.txt` for manual batch paste into Ideogram.
 - `neo/tools/cmd_router.py` *(PLANNED)*: Parses `[NEO_MEDIA_BUILD]` tags from CMD Gem output, dispatches to correct media module.
 - **Webhook:** `DISCORD_WH_FACTORY` monitors Channel 1 pipeline completions.

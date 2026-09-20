@@ -63,7 +63,7 @@ def execute_arbitrage_pipeline(project_name: str, script_json: list) -> str:
             f"**ARBITRAGE DEPLOYMENT COMPLETE**\n"
             f"**Project:** `{project_name}`\n"
             f"**Assets Rendered:** `{len(script_json)} audio files`\n"
-            f"**Location:** `C:\\neo_core\\media\\channel_1\\{project_name}`\n"
+            f"**Location:** `{base_dir}`\n"
             f"Awaiting Operator visual generation."
         )
         ping_discord("system", discord_msg)

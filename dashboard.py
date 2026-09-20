@@ -5,7 +5,6 @@ Run: streamlit run dashboard.py
 
 Panels:
 - Live system status (state.txt) + RAM/CPU
-- Active task with Done/Dismiss/Skip (notch_state.json — mirrors the Notch HUD)
 - Quick-action shortcuts (preset directives -> NeoBrain)
 - Bounty feed (bounty_log.csv)
 - Directive chat (ReAct)
@@ -16,7 +15,6 @@ psutil optional (metrics hidden if absent).
 
 import os
 import csv
-import json
 import time
 from pathlib import Path
 from datetime import datetime
@@ -39,7 +37,6 @@ from neo.brain import NeoBrain
 
 ROOT        = Path(__file__).parent
 STATE_FILE  = ROOT / "state.txt"
-NOTCH_STATE = ROOT / "notch_state.json"
 BOUNTY_LOG  = ROOT / "bounty_log.csv"
 
 # ── Page config ────────────────────────────────────────────────────────────────
@@ -68,20 +65,6 @@ def state_badge(s: str):
     if "process" in low or "blue" in low:
         return "#00BFFF", "PROCESSING"
     return "#888888", "IDLE"
-
-def read_task() -> dict:
-    try:
-        return json.loads(NOTCH_STATE.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-
-def write_task_status(status: str):
-    data = read_task()
-    data["status"] = status
-    try:
-        NOTCH_STATE.write_text(json.dumps(data), encoding="utf-8")
-    except Exception:
-        pass
 
 def read_bounties(n: int = 20):
     if not BOUNTY_LOG.exists():
@@ -118,22 +101,6 @@ with st.sidebar:
 
     if st.button("🔄 Refresh", use_container_width=True):
         st.rerun()
-
-    st.divider()
-
-    # Active task
-    st.markdown("## 📋 ACTIVE TASK")
-    task = read_task()
-    task_text = task.get("task") or task.get("suggestion") or "No active task"
-    task_status = task.get("status", "PENDING")
-    st.info(f"{task_text}\n\n**Status:** {task_status}")
-    t1, t2, t3 = st.columns(3)
-    if t1.button("✅ Done", use_container_width=True):
-        write_task_status("COMPLETED"); st.rerun()
-    if t2.button("✗ Dismiss", use_container_width=True):
-        write_task_status("DISMISSED"); st.rerun()
-    if t3.button("→ Skip", use_container_width=True):
-        write_task_status("SKIPPED"); st.rerun()
 
     st.divider()
 
